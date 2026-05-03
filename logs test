@@ -5,7 +5,7 @@ import json
 import os
 
 # -------- CONFIG --------
-TOKEN = ""
+TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log_settings.json")
 
 # -------- INTENTS --------
