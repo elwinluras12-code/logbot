@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogBot — Discord Logging Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b0c10;
+    --surface: #13141a;
+    --surface2: #1a1c24;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.13);
+    --text: #f0f0f5;
+    --muted: #7a7d8e;
+    --accent: #5865F2;
+    --accent-dim: rgba(88,101,242,0.15);
+    --accent-glow: rgba(88,101,242,0.3);
+    --green: #23d18b;
+    --red: #f04747;
+    --yellow: #faa61a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,12,16,0.85);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+  }
+  .nav-logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent); display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .nav-logo span { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; }
+
+  .nav-links { display: flex; align-items: center; gap: 2rem; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 14px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 20px; border-radius: 8px; font-size: 14px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500;
+    text-decoration: none; cursor: pointer; border: none;
+    transition: all 0.2s;
+  }
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+  .btn-primary {
+    background: var(--accent); color: white;
+  }
+  .btn-primary:hover { background: #4752c4; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-lg { padding: 13px 28px; font-size: 15px; border-radius: 10px; }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    overflow: hidden;
+  }
+
+  .hero-orb {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(88,101,242,0.18) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -60%);
+    pointer-events: none;
+  }
+  .hero-orb2 {
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(35,209,139,0.08) 0%, transparent 70%);
+    bottom: 0; right: 10%;
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px; border-radius: 99px;
+    border: 1px solid rgba(88,101,242,0.35);
+    background: rgba(88,101,242,0.1);
+    color: #a5abff; font-size: 12px; font-weight: 500;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.25rem;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  h1 .accent { color: var(--accent); }
+  h1 .dim { color: var(--muted); }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto 2.5rem;
+    font-weight: 300;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-btns {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp 0.6s 0.3s ease both;
+    margin-bottom: 4rem;
+  }
+
+  .hero-stats {
+    display: flex; gap: 3rem; justify-content: center;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem; font-weight: 700; color: var(--text);
+  }
+  .hero-stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* DIVIDER */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0 2rem;
+  }
+
+  /* FEATURES */
+  .features {
+    padding: 6rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700; line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+  .section-sub {
+    color: var(--muted); font-size: 1rem; font-weight: 300;
+    max-width: 480px;
+  }
+
+  .features-header { margin-bottom: 3.5rem; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    padding: 2rem;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card:hover { background: var(--surface2); }
+  .feature-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at top left, var(--accent-dim), transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature-card:hover::before { opacity: 1; }
+
+  .feature-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(88,101,242,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 1.25rem;
+  }
+  .feature-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .feature-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+  /* LOG TYPES SECTION */
+  .logtypes {
+    padding: 6rem 2rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .logtypes-inner { max-width: 1100px; margin: 0 auto; }
+  .logtypes-header { margin-bottom: 3rem; }
+
+  .logtypes-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  .logtype-group-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 600;
+    color: var(--muted); letter-spacing: 0.06em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .logtype-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; margin: 3px 2px;
+    border-radius: 99px; font-size: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .logtype-pill span { font-size: 13px; }
+
+  /* HOW IT WORKS */
+  .howitworks {
+    padding: 6rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    margin-top: 3.5rem;
+  }
+  .step {
+    position: relative;
+    padding: 1.75rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .step-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem; font-weight: 800;
+    color: rgba(88,101,242,0.15);
+    line-height: 1; margin-bottom: 1rem;
+  }
+  .step-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600; margin-bottom: 0.5rem;
+  }
+  .step-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+  /* CTA SECTION */
+  .cta-section {
+    padding: 6rem 2rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(88,101,242,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700; letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+  .cta-section p { color: var(--muted); margin-bottom: 2.5rem; font-weight: 300; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  footer p { font-size: 13px; color: var(--muted); }
+  footer a { color: var(--muted); text-decoration: none; font-size: 13px; }
+  footer a:hover { color: var(--text); }
+  .footer-links { display: flex; gap: 1.5rem; }
+
+  /* EMBED PREVIEW */
+  .embed-preview {
+    max-width: 420px;
+    background: #2b2d31;
+    border-radius: 8px;
+    border-left: 4px solid var(--red);
+    padding: 12px 16px;
+    margin: 0 auto;
+    text-align: left;
+  }
+  .embed-title { font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px; }
+  .embed-field { margin-bottom: 6px; }
+  .embed-field-name { font-size: 11px; font-weight: 600; color: #b5bac1; }
+  .embed-field-val { font-size: 13px; color: #dbdee1; }
+
+  /* LIVE BADGE */
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--green); font-weight: 500;
+  }
+  .live-badge::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--green);
+    animation: pulse 2s infinite;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/></svg>
+    </div>
+    <span>LogBot</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#logs">Log Types</a>
+    <a href="#setup">Setup</a>
+  </div>
+  <div class="nav-cta">
+    <a href="/dashboard.html" class="btn btn-ghost">Dashboard</a>
+    <a href="#invite" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Add to Discord
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-orb"></div>
+  <div class="hero-orb2"></div>
+
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    Bot is online and ready
+  </div>
+
+  <h1>
+    Every action.<br>
+    <span class="accent">Logged.</span> <span class="dim">Perfectly.</span>
+  </h1>
+
+  <p class="hero-sub">
+    LogBot tracks everything happening in your Discord server — messages, members, roles, voice, and more — all in real time, all in one place.
+  </p>
+
+  <div class="hero-btns">
+    <a href="#invite" class="btn btn-primary btn-lg">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Add to your server
+    </a>
+    <a href="/dashboard.html" class="btn btn-ghost btn-lg">Open dashboard →</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">25+</div>
+      <div class="hero-stat-label">Log event types</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">100%</div>
+      <div class="hero-stat-label">Configurable</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">0ms</div>
+      <div class="hero-stat-label">Setup time</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-header">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Everything your<br>server needs to stay in control</h2>
+    <p class="section-sub">Configure each log type independently with its own dedicated channel.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Real-time logging</div>
+      <p class="feature-desc">Events are captured and posted instantly — no delays, no missed actions. If it happens in your server, LogBot catches it.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎛️</div>
+      <div class="feature-title">Web dashboard</div>
+      <p class="feature-desc">Configure every log type from a clean web UI. Toggle events on or off, assign channels — no more slash command clicking.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <div class="feature-title">Discord OAuth login</div>
+      <p class="feature-desc">Sign in with your Discord account. LogBot only shows servers where you have admin permissions — no token sharing needed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <div class="feature-title">Rich embeds</div>
+      <p class="feature-desc">Every log message is a beautifully formatted embed with color-coded severity, user avatars, and all relevant details.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <div class="feature-title">Per-event channels</div>
+      <p class="feature-desc">Route each log type to a different channel. Put bans in mod-logs, voice events in voice-logs — total separation.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Audit log aware</div>
+      <p class="feature-desc">LogBot cross-references Discord's audit log to surface who performed an action — not just what happened.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LOG TYPES -->
+<section class="logtypes" id="logs">
+  <div class="logtypes-inner">
+    <div class="logtypes-header">
+      <div class="section-tag">Coverage</div>
+      <h2 class="section-title">25 event types. Zero gaps.</h2>
+      <p class="section-sub">Everything that happens in your server is tracked — you choose what to log and where.</p>
+    </div>
+    <div class="logtypes-groups">
+      <div>
+        <div class="logtype-group-title">Messages</div>
+        <div><span class="logtype-pill"><span>🗑️</span> Message deleted</span></div>
+        <div><span class="logtype-pill"><span>✏️</span> Message edited</span></div>
+      </div>
+      <div>
+        <div class="logtype-group-title">Members</div>
+        <div><span class="logtype-pill"><span>📥</span> Member joined</span></div>
+        <div><span class="logtype-pill"><span>📤</span> Member left</span></div>
+        <div><span class="logtype-pill"><span>🔨</span> Member banned</span></div>
+        <div><span class="logtype-pill"><span>♻️</span> Member unbanned</span></div>
+        <div><span class="logtype-pill"><span>📝</span> Nickname changed</span></div>
+      </div>
+      <div>
+        <div class="logtype-group-title">Roles</div>
+        <div><span class="logtype-pill"><span>➕</span> Role added</span></div>
+        <div><span class="logtype-pill"><span>➖</span> Role removed</span></div>
+        <div><span class="logtype-pill"><span>🎨</span> Role created</span></div>
+        <div><span class="logtype-pill"><span>🗑️</span> Role deleted</span></div>
+        <div><span class="logtype-pill"><span>🔧</span> Role updated</span></div>
+      </div>
+      <div>
+        <div class="logtype-group-title">Channels</div>
+        <div><span class="logtype-pill"><span>📢</span> Channel created</span></div>
+        <div><span class="logtype-pill"><span>🗑️</span> Channel deleted</span></div>
+        <div><span class="logtype-pill"><span>🔧</span> Channel updated</span></div>
+      </div>
+      <div>
+        <div class="logtype-group-title">Voice</div>
+        <div><span class="logtype-pill"><span>🔊</span> Voice joined</span></div>
+        <div><span class="logtype-pill"><span>🔇</span> Voice left</span></div>
+        <div><span class="logtype-pill"><span>🔀</span> Voice switched</span></div>
+      </div>
+      <div>
+        <div class="logtype-group-title">Server</div>
+        <div><span class="logtype-pill"><span>🔗</span> Invite created</span></div>
+        <div><span class="logtype-pill"><span>❌</span> Invite deleted</span></div>
+        <div><span class="logtype-pill"><span>⚙️</span> Server updated</span></div>
+        <div><span class="logtype-pill"><span>🧵</span> Thread created</span></div>
+        <div><span class="logtype-pill"><span>🗑️</span> Thread deleted</span></div>
+        <div><span class="logtype-pill"><span>😀</span> Emoji created</span></div>
+        <div><span class="logtype-pill"><span>🗑️</span> Emoji deleted</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="howitworks" id="setup">
+  <div class="section-tag">Setup</div>
+  <h2 class="section-title">Up and running in 3 steps</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Invite LogBot</div>
+      <p class="step-desc">Click "Add to Discord" and select your server. LogBot needs no special permissions beyond what it needs to read events.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">Log in to the dashboard</div>
+      <p class="step-desc">Sign in with Discord OAuth. You'll see all servers where you're an admin and LogBot is present.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Configure your logs</div>
+      <p class="step-desc">Toggle each event type on, assign a channel, and hit save. Changes go live instantly — no restart needed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="invite">
+  <h2>Ready to take control of your server?</h2>
+  <p>Add LogBot for free — no credit card, no premium paywall, no nonsense.</p>
+  <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=8&scope=bot%20applications.commands" class="btn btn-primary btn-lg">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    Add LogBot to Discord
+  </a>
+</section>
+
+<footer>
+  <a href="/" class="nav-logo" style="gap:8px;">
+    <div class="nav-logo-icon" style="width:24px;height:24px;border-radius:6px;">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z" fill="white"/></svg>
+    </div>
+    <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#7a7d8e;">LogBot</span>
+  </a>
+  <p>Built with discord.py · Self-hosted · Open source</p>
+  <div class="footer-links">
+    <a href="#">GitHub</a>
+    <a href="#">Support</a>
+    <a href="/dashboard.html">Dashboard</a>
+  </div>
+</footer>
+
+</body>
+</html>

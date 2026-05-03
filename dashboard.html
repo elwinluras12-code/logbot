@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogBot — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0c10;
+    --surface: #13141a;
+    --surface2: #1a1c24;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.13);
+    --text: #f0f0f5;
+    --muted: #7a7d8e;
+    --accent: #5865F2;
+    --accent-dim: rgba(88,101,242,0.12);
+    --green: #23d18b;
+    --red: #f04747;
+    --yellow: #faa61a;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; overflow-x: hidden;
+  }
+
+  /* LOGIN SCREEN */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 2rem;
+    background: radial-gradient(ellipse at center, rgba(88,101,242,0.1) 0%, transparent 70%);
+  }
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    max-width: 400px; width: 100%;
+  }
+  .login-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--accent); margin: 0 auto 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-icon svg { width: 32px; height: 32px; fill: white; }
+  .login-card h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .login-card p { color: var(--muted); font-size: 14px; margin-bottom: 2rem; }
+  .btn-discord {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 13px 20px;
+    background: var(--accent); color: white; border: none;
+    border-radius: 10px; font-size: 15px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-discord:hover { background: #4752c4; transform: translateY(-1px); }
+  .btn-discord svg { width: 22px; height: 22px; fill: white; }
+  .login-note { font-size: 11px; color: var(--muted); margin-top: 1rem; }
+
+  /* APP LAYOUT */
+  #appScreen { display: none; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 50;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 1.25rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo-icon {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .sidebar-logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .sidebar-logo-text { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
+
+  .sidebar-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 1.25rem 1.25rem 0.4rem;
+  }
+
+  .server-list { padding: 0 0.75rem 0.75rem; }
+  .server-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .server-item:hover { background: var(--surface2); }
+  .server-item.active { background: var(--accent-dim); }
+  .server-avatar {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: white;
+    font-family: 'Syne', sans-serif;
+  }
+  .server-name { font-size: 13px; font-weight: 500; }
+  .server-status { font-size: 11px; color: var(--muted); }
+
+  .sidebar-user {
+    margin-top: auto;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    font-family: 'Syne', sans-serif; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .user-tag { font-size: 11px; color: var(--muted); }
+  .logout-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 4px;
+    border-radius: 6px; transition: color 0.15s, background 0.15s;
+  }
+  .logout-btn:hover { color: var(--red); background: rgba(240,71,71,0.1); }
+  .logout-btn svg { width: 16px; height: 16px; }
+
+  /* MAIN CONTENT */
+  .main-content {
+    margin-left: 260px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  .topbar {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(11,12,16,0.8);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 40;
+  }
+  .topbar-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .save-btn {
+    padding: 8px 20px; background: var(--accent); color: white;
+    border: none; border-radius: 8px; font-size: 13px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .save-btn:hover { background: #4752c4; }
+  .save-btn.saving { opacity: 0.7; cursor: not-allowed; }
+  .save-btn.saved { background: #1a7a4a; }
+
+  /* CONFIG AREA */
+  .config-area { padding: 2rem; flex: 1; }
+
+  .search-row {
+    display: flex; gap: 8px; margin-bottom: 1.5rem; align-items: center;
+  }
+  .search-input {
+    flex: 1; padding: 9px 14px; font-size: 13px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .filter-pill {
+    padding: 7px 14px; font-size: 12px; font-weight: 500;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 99px; color: var(--muted); cursor: pointer;
+    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .filter-pill:hover { border-color: var(--border-hover); color: var(--text); }
+  .filter-pill.active { background: var(--accent-dim); border-color: rgba(88,101,242,0.4); color: #a5abff; }
+
+  .log-section { margin-bottom: 1.75rem; }
+  .log-section-header {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 0 2px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .log-section-count {
+    font-size: 10px; color: var(--accent);
+    background: var(--accent-dim);
+    padding: 1px 6px; border-radius: 99px;
+  }
+
+  .log-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .log-row:hover { border-color: var(--border-hover); }
+  .log-row.enabled { border-color: rgba(88,101,242,0.3); background: rgba(88,101,242,0.04); }
+
+  .log-emoji { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+
+  .log-info { flex: 1; min-width: 0; }
+  .log-name { font-size: 13px; font-weight: 500; }
+  .log-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .channel-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+    max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .channel-badge.set { color: #a5abff; background: var(--accent-dim); border-color: rgba(88,101,242,0.25); }
+  .channel-badge svg { width: 11px; height: 11px; fill: currentColor; flex-shrink: 0; }
+
+  .toggle {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: var(--surface2); border: 1px solid var(--border-hover);
+    cursor: pointer; position: relative;
+    transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--muted); top: 2px; left: 2px;
+    transition: left 0.2s, background 0.2s;
+  }
+  .toggle.on { background: var(--accent); border-color: var(--accent); }
+  .toggle.on::after { left: 20px; background: white; }
+
+  /* CHANNEL MODAL */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 200;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-hover);
+    border-radius: 16px; padding: 1.75rem;
+    width: 340px; box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+  }
+  .modal h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .modal p { font-size: 12px; color: var(--muted); margin-bottom: 1.25rem; }
+  .modal-input {
+    width: 100%; padding: 10px 12px; font-size: 13px;
+    background: var(--surface2); border: 1px solid var(--border-hover);
+    border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; outline: none;
+    margin-bottom: 1rem; transition: border-color 0.15s;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+
+  .channel-suggestions { margin-bottom: 1rem; }
+  .channel-suggestion {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 6px; cursor: pointer;
+    transition: background 0.15s; font-size: 13px; color: var(--muted);
+  }
+  .channel-suggestion:hover { background: var(--surface2); color: var(--text); }
+
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-cancel {
+    padding: 8px 16px; font-size: 13px; border-radius: 8px;
+    border: 1px solid var(--border-hover); background: transparent;
+    color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-cancel:hover { color: var(--text); }
+  .btn-save {
+    padding: 8px 16px; font-size: 13px; border-radius: 8px;
+    border: none; background: var(--accent); color: white;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: #4752c4; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--surface); border: 1px solid var(--border-hover);
+    border-radius: 10px; padding: 12px 18px;
+    font-size: 13px; color: var(--text);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    transform: translateY(20px); opacity: 0;
+    transition: all 0.25s; pointer-events: none; z-index: 300;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .toast-dot.success { background: var(--green); }
+  .toast-dot.error { background: var(--red); }
+
+  /* EMPTY / NO SERVER */
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    flex: 1; padding: 4rem; text-align: center; color: var(--muted);
+  }
+  .empty-state svg { width: 48px; height: 48px; fill: var(--muted); opacity: 0.4; margin-bottom: 1rem; }
+  .empty-state h3 { font-family: 'Syne', sans-serif; font-size: 1rem; color: var(--text); margin-bottom: 0.5rem; }
+
+  /* STATUS DOT */
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--muted);
+  }
+  .status-dot.online { background: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/></svg>
+    </div>
+    <h1>LogBot Dashboard</h1>
+    <p>Sign in with Discord to manage your server's logging configuration.</p>
+    <a id="loginBtn" href="#" class="btn-discord" onclick="startLogin()">
+      <svg viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      Sign in with Discord
+    </a>
+    <p class="login-note">Only servers where you have Admin permissions will be shown.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/></svg>
+      </div>
+      <span class="sidebar-logo-text">LogBot</span>
+    </div>
+
+    <div class="sidebar-section-label">Your Servers</div>
+    <div class="server-list" id="serverList"></div>
+
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbarTitle">Select a server</div>
+        <div class="topbar-sub" id="topbarSub">Choose a server from the sidebar to configure</div>
+      </div>
+      <button class="save-btn" id="saveBtn" onclick="saveSettings()" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        Save changes
+      </button>
+    </div>
+
+    <div class="config-area" id="configArea">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+        <h3>No server selected</h3>
+        <p>Pick a server from the sidebar to start configuring logs.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHANNEL MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Set log channel</h3>
+    <p id="modalDesc">Enter the channel name where this event should be logged.</p>
+    <input type="text" class="modal-input" id="modalInput" placeholder="#mod-logs" />
+    <div class="channel-suggestions" id="channelSuggestions"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="confirmChannel()">Set channel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-dot success" id="toastDot"></div>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:5000';
+
+const LOG_TYPES = [
+  { label: "Message deleted", value: "message_delete", icon: "🗑️", group: "Messages", desc: "When a message is deleted" },
+  { label: "Message edited", value: "message_edit", icon: "✏️", group: "Messages", desc: "When a message is edited" },
+  { label: "Member joined", value: "member_join", icon: "📥", group: "Members", desc: "When someone joins the server" },
+  { label: "Member left", value: "member_leave", icon: "📤", group: "Members", desc: "When someone leaves or is kicked" },
+  { label: "Member banned", value: "member_ban", icon: "🔨", group: "Members", desc: "When a member is banned" },
+  { label: "Member unbanned", value: "member_unban", icon: "♻️", group: "Members", desc: "When a ban is revoked" },
+  { label: "Nickname changed", value: "nickname", icon: "📝", group: "Members", desc: "When someone changes their nickname" },
+  { label: "Role added to member", value: "role_add", icon: "➕", group: "Roles", desc: "When a role is given to a member" },
+  { label: "Role removed from member", value: "role_remove", icon: "➖", group: "Roles", desc: "When a role is removed from a member" },
+  { label: "Role created", value: "role_create", icon: "🎨", group: "Roles", desc: "When a new role is created" },
+  { label: "Role deleted", value: "role_delete", icon: "🗑️", group: "Roles", desc: "When a role is deleted" },
+  { label: "Role updated", value: "role_update", icon: "🔧", group: "Roles", desc: "When a role's settings change" },
+  { label: "Channel created", value: "channel_create", icon: "📢", group: "Channels", desc: "When a channel is created" },
+  { label: "Channel deleted", value: "channel_delete", icon: "🗑️", group: "Channels", desc: "When a channel is deleted" },
+  { label: "Channel updated", value: "channel_update", icon: "🔧", group: "Channels", desc: "When channel settings change" },
+  { label: "Voice joined", value: "voice_join", icon: "🔊", group: "Voice", desc: "When someone joins a voice channel" },
+  { label: "Voice left", value: "voice_leave", icon: "🔇", group: "Voice", desc: "When someone leaves a voice channel" },
+  { label: "Voice switched", value: "voice_switch", icon: "🔀", group: "Voice", desc: "When someone moves between voice channels" },
+  { label: "Invite created", value: "invite_create", icon: "🔗", group: "Server", desc: "When a new invite is created" },
+  { label: "Invite deleted", value: "invite_delete", icon: "❌", group: "Server", desc: "When an invite is deleted or expires" },
+  { label: "Server updated", value: "server_update", icon: "⚙️", group: "Server", desc: "When server settings change" },
+  { label: "Thread created", value: "thread_create", icon: "🧵", group: "Server", desc: "When a thread is created" },
+  { label: "Thread deleted", value: "thread_delete", icon: "🗑️", group: "Server", desc: "When a thread is deleted" },
+  { label: "Emoji created", value: "emoji_create", icon: "😀", group: "Server", desc: "When a custom emoji is added" },
+  { label: "Emoji deleted", value: "emoji_delete", icon: "🗑️", group: "Server", desc: "When a custom emoji is removed" },
+];
+
+const SUGGESTED_CHANNELS = ['logs', 'mod-logs', 'server-logs', 'audit-log', 'bot-logs'];
+
+let currentUser = null;
+let currentGuild = null;
+let settings = {};
+let filterMode = 'all';
+let editingKey = null;
+let pendingChanges = false;
+
+// --- AUTH ---
+function startLogin() {
+  window.location.href = `${API_BASE}/auth/login`;
+}
+
+async function checkAuth() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token') || localStorage.getItem('logbot_token');
+  if (!token) return false;
+  localStorage.setItem('logbot_token', token);
+  if (params.get('token')) {
+    window.history.replaceState({}, '', '/dashboard.html');
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    currentUser = data;
+    return true;
+  } catch { 
+    localStorage.removeItem('logbot_token');
+    return false;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('logbot_token');
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display = 'none';
+}
+
+// --- INIT ---
+async function init() {
+  const loggedIn = await checkAuth();
+  if (loggedIn) {
+    showApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+  }
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  renderUser();
+  loadGuilds();
+}
+
+function renderUser() {
+  const el = document.getElementById('sidebarUser');
+  const avatarUrl = currentUser.avatar
+    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`
+    : null;
+  el.innerHTML = `
+    <div class="user-avatar">
+      ${avatarUrl ? `<img src="${avatarUrl}" alt="">` : currentUser.username.charAt(0).toUpperCase()}
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div class="user-name">${currentUser.username}</div>
+      <div class="user-tag">#${currentUser.discriminator || '0000'}</div>
+    </div>
+    <button class="logout-btn" onclick="logout()" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+    </button>
+  `;
+}
+
+async function loadGuilds() {
+  const token = localStorage.getItem('logbot_token');
+  try {
+    const res = await fetch(`${API_BASE}/api/guilds`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const guilds = await res.json();
+    renderServerList(guilds);
+  } catch {
+    showToast('Could not load servers. Is the bot running?', 'error');
+  }
+}
+
+function renderServerList(guilds) {
+  const el = document.getElementById('serverList');
+  if (!guilds.length) {
+    el.innerHTML = '<div style="padding: 0.5rem 1rem; font-size: 12px; color: var(--muted);">No shared servers found.<br>Make sure LogBot is invited.</div>';
+    return;
+  }
+  el.innerHTML = guilds.map(g => {
+    const initials = g.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `
+      <div class="server-item" onclick="selectGuild(${JSON.stringify(g).replace(/"/g, '&quot;')})">
+        <div class="server-avatar">${g.icon ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">` : initials}</div>
+        <div>
+          <div class="server-name">${g.name}</div>
+          <div class="server-status">${g.member_count || ''} members</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function selectGuild(guild) {
+  currentGuild = guild;
+  document.querySelectorAll('.server-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  document.getElementById('topbarTitle').textContent = guild.name;
+  document.getElementById('topbarSub').textContent = 'Configure log channels for each event type';
+  document.getElementById('saveBtn').style.display = 'flex';
+
+  const token = localStorage.getItem('logbot_token');
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/${guild.id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    settings = await res.json();
+  } catch {
+    settings = {};
+  }
+  pendingChanges = false;
+  renderLogs();
+}
+
+// --- RENDER LOGS ---
+function renderLogs() {
+  const q = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+  const area = document.getElementById('configArea');
+
+  const groups = {};
+  LOG_TYPES.forEach(t => {
+    if (q && !t.label.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return;
+    const enabled = !!settings[t.value];
+    if (filterMode === 'on' && !enabled) return;
+    if (filterMode === 'off' && enabled) return;
+    if (!groups[t.group]) groups[t.group] = [];
+    groups[t.group].push(t);
+  });
+
+  const entries = Object.entries(groups);
+  if (entries.length === 0) {
+    area.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><h3>No results</h3><p>Try a different search or filter.</p></div>';
+    return;
+  }
+
+  let html = `
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search log types..." oninput="renderLogs()" value="${q}">
+      <button class="filter-pill ${filterMode==='all'?'active':''}" onclick="setFilter('all')">All</button>
+      <button class="filter-pill ${filterMode==='on'?'active':''}" onclick="setFilter('on')">Enabled</button>
+      <button class="filter-pill ${filterMode==='off'?'active':''}" onclick="setFilter('off')">Disabled</button>
+    </div>
+  `;
+
+  entries.forEach(([group, types]) => {
+    const enabledCount = types.filter(t => settings[t.value]).length;
+    html += `<div class="log-section">
+      <div class="log-section-header">
+        ${group}
+        ${enabledCount > 0 ? `<span class="log-section-count">${enabledCount} active</span>` : ''}
+      </div>`;
+    types.forEach(t => {
+      const enabled = !!settings[t.value];
+      const ch = settings[t.value];
+      html += `
+        <div class="log-row ${enabled ? 'enabled' : ''}" id="row-${t.value}">
+          <span class="log-emoji">${t.icon}</span>
+          <div class="log-info">
+            <div class="log-name">${t.label}</div>
+            <div class="log-desc">${t.desc}</div>
+          </div>
+          <div class="channel-badge ${ch ? 'set' : ''}" onclick="openModal('${t.value}','${t.label}')">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/></svg>
+            ${ch ? '#' + ch : 'Set channel'}
+          </div>
+          <div class="toggle ${enabled ? 'on' : ''}" onclick="toggleLog('${t.value}','${t.label}')"></div>
+        </div>`;
+    });
+    html += '</div>';
+  });
+
+  area.innerHTML = html;
+  document.getElementById('searchInput').focus();
+}
+
+function setFilter(mode) {
+  filterMode = mode;
+  renderLogs();
+}
+
+function toggleLog(key, label) {
+  if (settings[key]) {
+    delete settings[key];
+    markDirty();
+    renderLogs();
+  } else {
+    openModal(key, label);
+  }
+}
+
+// --- MODAL ---
+function openModal(key, label) {
+  editingKey = key;
+  document.getElementById('modalTitle').textContent = label;
+  document.getElementById('modalDesc').textContent = 'Enter the channel name (without #) to post these logs in.';
+  document.getElementById('modalInput').value = settings[key] || '';
+
+  const sugg = document.getElementById('channelSuggestions');
+  sugg.innerHTML = SUGGESTED_CHANNELS.map(ch => `
+    <div class="channel-suggestion" onclick="document.getElementById('modalInput').value='${ch}'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      #${ch}
+    </div>
+  `).join('');
+
+  document.getElementById('modalBg').classList.add('open');
+  setTimeout(() => document.getElementById('modalInput').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+  editingKey = null;
+}
+
+function confirmChannel() {
+  const val = document.getElementById('modalInput').value.trim().replace(/^#/, '');
+  if (!val) { closeModal(); return; }
+  settings[editingKey] = val;
+  markDirty();
+  closeModal();
+  renderLogs();
+}
+
+// --- SAVE ---
+function markDirty() {
+  pendingChanges = true;
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '';
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg> Save changes';
+  btn.style.background = 'var(--accent)';
+}
+
+async function saveSettings() {
+  if (!currentGuild) return;
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saving');
+  btn.innerHTML = 'Saving...';
+
+  const token = localStorage.getItem('logbot_token');
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/${currentGuild.id}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    });
+    if (!res.ok) throw new Error();
+    btn.classList.remove('saving');
+    btn.classList.add('saved');
+    btn.innerHTML = '✓ Saved';
+    pendingChanges = false;
+    showToast('Settings saved successfully', 'success');
+    setTimeout(() => {
+      btn.classList.remove('saved');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg> Save changes';
+      btn.style.background = 'var(--accent)';
+    }, 2000);
+  } catch {
+    btn.classList.remove('saving');
+    showToast('Failed to save. Is the bot running?', 'error');
+    markDirty();
+  }
+}
+
+// --- TOAST ---
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastDot').className = `toast-dot ${type}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// --- KEYBOARD ---
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveSettings(); }
+});
+document.getElementById('modalInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmChannel();
+});
+document.getElementById('modalBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalBg')) closeModal();
+});
+
+init();
+</script>
+</body>
+</html>
